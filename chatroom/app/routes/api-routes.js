@@ -32,6 +32,7 @@ module.exports = function(app) {
         }).then(function(dbChat) {
             // We have access to the new todo as an argument inside of the callback function
             res.json(dbChat);
+            console.log(dbChat)
         });
     });
 

@@ -6,6 +6,13 @@ var server = require("http").createServer(app);
 var io = require("socket.io")(server); // Can be either http, server
 var db = require("./app/models")
 var PORT = process.env.PORT || 8080;
+var env = process.env.NODE_ENV || "development";
+require("../chatroom/app/config/config")[env];
+var Sequelize = require("sequelize");
+var sequelize = new Sequelize("chatroom_db", "root", "Il0ve0scar", {
+    host: "localhost",
+    dialect: "mysql"
+});
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -29,6 +36,7 @@ io.on("connection", (socket) => {
             message: data
         });
         console.log(socket.username + ": " + data);
+        writeToDB(socket.username, data);
     });
 
     // when the client emits 'add user', this listens and executes
@@ -80,29 +88,18 @@ io.on("connection", (socket) => {
 });
 
 console.log("total Users online: " + numUsers);
-db.sequelize.sync().then(function() {
+// db.sequelize.sync({ force: false }).then 
+function start() {
     server.listen(PORT, function() {
         console.log("listening on localhost:" + PORT);
     });
     //         app.listen(PORT, function() {
     //             console.log("App listening on PORT " + PORT);
     //         })
-})
+}
+start();
 
-// TODO Heroku
-// https://stackoverflow.com/questions/25013735/socket-io-nodejs-doesnt-work-on-heroku
-
-// Private Message
-// https://stackoverflow.com/questions/11356001/socket-io-private-message
-
-// Creating Rooms
-// https://stackoverflow.com/questions/19150220/creating-rooms-in-socket-io
-
-
-// Get the client's IP address in socket.io
-// io.sockets.on('connection', function (socket) {
-//     var socketId = socket.id;
-//     var clientIp = socket.request.connection.remoteAddress;
-
-//     console.log(clientIp);
-//   });
+function writeToDB(username, data) {
+    sequelize.query("insert into chatroom_db.chats (username, message) values ('" + username + "', '" + data + "')", { type: sequelize.QueryTypes.INSERT })
+    return false;
+}
