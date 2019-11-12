@@ -1,4 +1,4 @@
-$(function () {
+$(function() {
     var FADE_TIME = 150; // ms
     var TYPING_TIMER_LENGTH = 400; // ms
     var COLORS = [
@@ -108,7 +108,7 @@ $(function () {
 
     // Removes the visual chat typing message
     const removeChatTyping = (data) => {
-        getTypingMessages(data).fadeOut(function () {
+        getTypingMessages(data).fadeOut(function() {
             $(this).remove();
         });
     }
@@ -171,7 +171,7 @@ $(function () {
 
     // Gets the 'X is typing' messages of a user
     const getTypingMessages = (data) => {
-        return $('.typing.message').filter(function (i) {
+        return $('.typing.message').filter(function(i) {
             return $(this).data('username') === data.username;
         });
     }
