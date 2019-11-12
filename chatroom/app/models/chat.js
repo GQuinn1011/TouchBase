@@ -1,10 +1,7 @@
-var Sequelize = require("sequelize");
-var sequelize = require("../config/connection.js");
-
-var Chat = sequelize.define("chats", {
-    user: Sequelize.STRING,
-    message: Sequelize.STRING,
-    created_at: Sequelize.DATE
-})
-Chat.sync();
-module.exports = Chat;
+module.exports = function(sequelize, DataTypes) {
+    var Chat = sequelize.define("sequelize_chatroom_db", {
+        username: DataTypes.STRING,
+        message: DataTypes.STRING
+    });
+    return Chat;
+};

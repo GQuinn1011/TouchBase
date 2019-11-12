@@ -2,8 +2,8 @@
 var express = require("express");
 var app = express();
 var path = require("path");
-var http = require("http").createServer(app);
-var io = require("socket.io")(http); // Can be either http, server
+var server = require("http").createServer(app);
+var io = require("socket.io")(server); // Can be either http, server
 var db = require("./app/models")
 var PORT = process.env.PORT || 8080;
 
@@ -13,7 +13,7 @@ app.use(express.static("app/public"));
 
 require("./app/routes/api-routes")(app);
 // Routing
-app.use(express.static(path.join(__dirname, "public")));
+//app.use(express.static(path.join(__dirname, "public")));
 
 // Chatroom
 var numUsers = 0;
@@ -79,15 +79,15 @@ io.on("connection", (socket) => {
     });
 });
 
-// console.log("total Users online: " + numUsers);
+console.log("total Users online: " + numUsers);
 db.sequelize.sync().then(function() {
-        app.listen(PORT, function() {
-            console.log("App listening on PORT " + PORT);
-        })
-    })
-    // http.listen(PORT, function() {
-    //     console.log("listening on localhost:" + PORT);
-    // });
+    server.listen(PORT, function() {
+        console.log("listening on localhost:" + PORT);
+    });
+    //         app.listen(PORT, function() {
+    //             console.log("App listening on PORT " + PORT);
+    //         })
+})
 
 // TODO Heroku
 // https://stackoverflow.com/questions/25013735/socket-io-nodejs-doesnt-work-on-heroku
