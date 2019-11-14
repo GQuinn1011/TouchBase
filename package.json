@@ -1,20 +1,22 @@
 {
-  "name": "project.2.group.3",
+  "name": "project-2-chatroom",
   "version": "1.0.0",
-  "description": "This is the second project for Rutgers Full Stack Web Development Bootcamp.\r The project will be a realtime multimedia communication web application.",
+  "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "chatroom"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "express-handlebars": "^3.1.0",
-    "fs": "0.0.1-security",
     "mysql": "^2.17.1",
-    "path": "^0.12.7"
+    "mysql2": "^2.0.0",
+    "sequelize": "^5.21.2",
+    "socket.io": "^2.3.0"
   }
 }
