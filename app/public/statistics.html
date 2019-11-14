@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+    
+<meta charset="utf-8">
+
+<script src="https://d3js.org/d3.v4.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+<style>
+    .bubbles {
+        stroke-width: 1px;
+        stroke: green;
+        opacity: .8;
+    }
+
+    .bubbles:hover {
+        stroke: black;
+    }
+
+    .svg-container {
+        font-family: 'Raleway', cursive;
+        display: inline-block;
+        position: relative;
+        width: 100%;
+        vertical-align: top;
+        overflow: hidden;
+    }
+
+    .svg-content-responsive {
+        display: inline-block;
+        position: absolute;
+        top: 10px;
+        left: 0;
+    }
+
+    .tooltip {
+        position: absolute;
+        text-align: left;
+        width: fit-content + 0.5em;
+        border-radius: 5px;
+        height: 1.2em;
+        padding: 8px;
+        margin-top: -20px;
+        font: 10px sans-serif;
+        background: #BC243C;
+        color: white;
+        pointer-events: none;
+    }
+</style>
+
+<body>
+
+    <!-- GRAPH GETS INSERTED HERE -->
+    <div id="graph"></div>
+
+    <script>
+
+        /* D3 DATA VISUALIZATION, INSERTS INTO #graph */
+        var margin = { width: 50, height: 25 };
+        var width = $(window).width();
+        var height = $(window).height();
+        var svg = d3.select("#graph")
+            .classed("svg-container", true)
+            .append("svg")
+            .attr("width", width - margin.width)
+            .attr("height", height - margin.height)
+            .append("g")
+            .attr("transform", "translate(" + margin.width + "," + margin.height + ")");
+        const loc = "https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/4_ThreeNum.csv";
+
+        //alternate: d3.json
+        d3.csv(loc, (data) => {
+
+            // Post as how-to on github
+                var columnNames = JSON.stringify(Object.keys(data[0]));
+                var col0 = columnNames.split(',')[0].split('"')[1];
+                var col1 = columnNames.split(',')[1].split('"')[1];
+                var col2 = columnNames.split(',')[2].split('"')[1];
+                var col3 = columnNames.split(',')[3].split('"')[1];
+                var col4 = columnNames.split(',')[4].split('"')[1];
+                console.log(col0, col1, col2, col3, col4)
+
+            /* GATHER GROUP NAMES FROM DATA COLUMN 2 (ZERO-INDEXED) */
+            var groups = [];
+            for (var i=0; i<Object.keys(data).length - 1; i++) {
+                var val = Object.values(data[i])[1];
+                if (!groups.includes(val)) {
+                    groups.push(val);
+                }
+            }
+
+            /* SET X AXIS */
+            var domain_max = parseInt(d3.max(data.sort((a, b) => { return b[col4] - a[col4] }))[col4]);
+            var x = d3
+                .scaleLinear()
+                .domain([0, 1.1 * domain_max])
+                .range([0, width]);
+            svg.append("g").call(d3.axisBottom(x).ticks(5));
+            svg.append("text")
+                .attr("text-anchor", "end")
+                .attr("x", 0)
+                .attr("y", -25)
+                .style("font-size", "1.2em")
+                .attr("transform", "rotate(-90)")
+                .text(col2);
+
+            /* SET Y AXIS */
+            var domain_max = parseInt(d3.max(data.sort((b, a) => { return a[col2] - b[col2] }))[col2]);
+            var domain_min = parseInt(d3.max(data.sort((a, b) => { return a[col2] - b[col2] }))[col2]);
+            var y = d3
+                .scaleLinear()
+                .domain([0.9 * domain_min, 1.1 * domain_max])
+                .range([height, 0]);
+            svg.append("g").call(d3.axisLeft(y));
+            svg.append("text")
+                .attr("text-anchor", "start")
+                .attr("x", 0)
+                .attr("y", -9)
+                .style("font-size", "1.2em")
+                .text(col4);
+
+            /* SET Z AXIS (BUBBLES) */
+            var domain_max = parseInt(d3.max(data.sort((b, a) => { return a[col3] - b[col3] }))[col3]);
+            var domain_min = parseInt(d3.max(data.sort((a, b) => { return a[col3] - b[col3] }))[col3]);
+            var z = d3
+                .scaleSqrt()
+                .domain([domain_min, domain_max])
+                .range([3, 50]);
+            var bubbleColor = d3
+                .scaleOrdinal()
+                .domain(groups)
+                .range(d3.schemeSet2);
+
+            /* SET TOOLTIP */
+            var tooltip = d3
+                .select("#graph")
+                .append("div")
+                .style("opacity", 0)
+                .attr("class", "tooltip");
+
+            var showTooltip = function (d) {
+                tooltip
+                    .transition()
+                    .duration(200)
+                tooltip
+                    .style("opacity", 1)
+                    .html(
+                        col0 + ": " + d[col0] + "; " +
+                        col2 + ": " + parseInt(d[col2]).toFixed(1) + "; " +
+                        col3 + ": " + parseInt(d[col3]).toLocaleString() + "; " +
+                        col4 + ": " + parseInt(d[col4]).toLocaleString()
+                    )
+                    .style("left", (d3.mouse(this)[0] - 25) + "px")
+                    .style("top", (d3.mouse(this)[1]) + "px")
+            }
+            var moveTooltip = function (d) {
+                tooltip
+                    .style("left", (d3.mouse(this)[0] - 25) + "px")
+                    .style("top", (d3.mouse(this)[1]) + "px")
+            }
+            var hideTooltip = function (d) {
+                tooltip
+                    .transition()
+                    .duration(200)
+                    .style("opacity", 0)
+            }
+
+            /* CHANGE BUBBLE OPACITY ON HOVER */
+            var highlight = function (d) {
+                d3
+                    .selectAll(".bubbles")
+                    .style("opacity", .05)
+                d3
+                    .selectAll("." + d)
+                    .style("opacity", 1)
+            }
+            var noHighlight = function (d) {
+                d3
+                    .selectAll(".bubbles")
+                    .style("opacity", 1)
+            }
+
+            /* SET BUBBLES */
+            svg
+                .append('g')
+                .selectAll("dot")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("class", function (d) { return "bubbles " + d[col1] })
+                .attr("cx", function (d) { return x(d[col4]); })
+                .attr("cy", function (d) { return y(d[col2]); })
+                .attr("r", function (d) { return z(d[col3]); })
+                .style("fill", function (d) { return bubbleColor(d[col1]); })
+                .on("mouseover", showTooltip)
+                .on("mousemove", moveTooltip)
+                .on("mouseleave", hideTooltip);
+
+            /* BUBBLE SIZE LEGEND */
+            var size = 20;
+            var bbl = Math.pow(10, domain_max.toString().length - 1);
+            var valuesToShow = [0.01 * bbl, 0.1 * bbl, bbl];
+            var xCircle = 0.5 * width
+            var xLabel = 1.08 * xCircle;
+            svg
+                .selectAll("legend")
+                .data(valuesToShow)
+                .enter()
+                .append("circle")
+                .attr("cx", xCircle)
+                .attr("cy", function (d) { return height - 100 - z(d) })
+                .attr("r", function (d) { return z(d) })
+                .style("fill", "none")
+                .attr("stroke", "black");
+            svg
+                .selectAll("legend")
+                .data(valuesToShow)
+                .enter()
+                .append("text")
+                .attr('x', xLabel)
+                .attr('y', function (d) { return height - 100 - z(d) })
+                .text(function (d) { return d.toLocaleString() })
+                .style("font-size", 10)
+                .attr('alignment-baseline', 'middle');
+            svg
+                .append("text")
+                .attr('x', xCircle)
+                .attr("y", height - 70)
+                .text(col3)
+                .style("font-size", "1.2em")
+                .attr("text-anchor", "middle");
+
+            /* BUBBLE GROUP LEGEND */
+            svg
+                .selectAll()
+                .data(groups)
+                .enter()
+                .append("circle")
+                .attr("cx", 1.4 * xCircle)
+                .attr("cy", function (d, i) { return height - 200 + i * (size + 5) })
+                .attr("r", 5)
+                .attr("fill-opacity", "0.6")
+                .style("fill", function (d) { return bubbleColor(d) })
+                .on("mouseover", highlight)
+                .on("mouseleave", noHighlight);
+            svg
+                .selectAll()
+                .data(groups)
+                .enter()
+                .append("text")
+                .attr("x", 1.4 * xCircle + size)
+                .attr("y", function (d, i) { return height - 200 + i * (size + 5) - (size / 2.5) })
+                .style("fill", function (d) { return bubbleColor(d) })
+                .text(function (d) { return d })
+                .attr("text-anchor", "left")
+                .style("alignment-baseline", "hanging")
+                .on("mouseover", highlight)
+                .on("mouseleave", noHighlight);
+        });
+    </script>
+</body>
+
+</html>
